@@ -20,7 +20,7 @@ public class AppHTTPClient {
     private static String UNITS = "units";
     private static final String units = "metric";
     private static final String NUM_DAYS = "cnt";
-    private static final int days=5;
+    private static final int days=14;
 
 
   /**
