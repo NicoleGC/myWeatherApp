@@ -5,6 +5,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.util.Log;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -15,6 +18,7 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.myweatherapp.AppHTTPClient;
 
@@ -23,13 +27,16 @@ import org.json.JSONException;
 import java.io.IOException;
 import java.net.URL;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements RecyclerViewAdapter.AdapterOnClickHandler {
 
 
+    private static final String TAG = "tag" ;
     private ProgressBar mProgressBar;
     private TextView mErrorMessageDisplay;
     private RecyclerView mRecyclerView;
     private RecyclerViewAdapter mAdapter;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,14 +52,31 @@ public class MainActivity extends AppCompatActivity {
         mRecyclerView.setHasFixedSize(true);
 
         //initialize the adapter
-        mAdapter = new RecyclerViewAdapter();
+        mAdapter = new RecyclerViewAdapter(this);
         mRecyclerView.setAdapter(mAdapter);
 
 
         loadWeatherData();
 
     }
-
+    public void openMapWithIntent(){
+        //build uri
+        Uri.Builder builder=new Uri.Builder();
+        builder.scheme("geo")
+                .path("0,0")
+                .query(getString(R.string.setLocation));
+        Uri location = builder.build();
+        //build intent
+        Intent intent=new Intent(Intent.ACTION_VIEW);
+        intent.setData(location);
+        //check for apps
+        if(intent.resolveActivity(getPackageManager())!=null){
+            startActivity(intent);
+        }
+        else{
+            Log.d(TAG, "No apps to service this request");
+        }
+    }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu,menu);
@@ -67,6 +91,10 @@ public class MainActivity extends AppCompatActivity {
             loadWeatherData();
             return true;
         }
+        else if(id==R.id.mapOpen){
+            openMapWithIntent();
+            return true;
+        }
         return super.onOptionsItemSelected(item);
     }
 
@@ -74,7 +102,7 @@ public class MainActivity extends AppCompatActivity {
 
         showWeatherDataView();
 
-        String location = this.getString(R.string.setLocation);
+        String location = getString(R.string.setLocation);
         new FetchWeatherTask().execute(location);
     }
     private void showErrorMessage(){
@@ -84,6 +112,15 @@ public class MainActivity extends AppCompatActivity {
     private void showWeatherDataView(){
         mErrorMessageDisplay.setVisibility(View.INVISIBLE);
         mRecyclerView.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void onClick(String dayWeather) {
+        Context context=this;
+        Intent intent = new Intent(context,MoreDetailsActivity.class);
+        intent.putExtra(Intent.EXTRA_TEXT,dayWeather);
+        startActivity(intent);
+
     }
 
 

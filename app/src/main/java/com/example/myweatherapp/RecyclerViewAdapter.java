@@ -15,9 +15,21 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
 private String[] mWeatherData;
 
-    public RecyclerViewAdapter(){
 
+private AdapterOnClickHandler mClickHandlerObj;
+
+/*Interface to be used to handle clicks*/
+public interface AdapterOnClickHandler{
+    void onClick(String dayWeather);
+}
+/**/
+
+    public RecyclerViewAdapter(AdapterOnClickHandler clickedHandled){
+            mClickHandlerObj = clickedHandled;
     }
+
+
+
     public void setWeatherData(String [] data){
         mWeatherData=data;
         notifyDataSetChanged();
@@ -48,13 +60,21 @@ private String[] mWeatherData;
         return mWeatherData.length;
     }
 
-    class RecyclerViewHolder extends RecyclerView.ViewHolder{
+    class RecyclerViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 
         public final TextView mItemWeatherView;
         public RecyclerViewHolder( View itemView) {
             super(itemView);
             mItemWeatherView = (TextView) itemView.findViewById(R.id.tv_recycler_item);
+            itemView.setOnClickListener(this);
 
+        }
+
+        @Override
+        public void onClick(View v) {
+            int adapterPosition = getAdapterPosition();
+            String dayWeather = mWeatherData[adapterPosition];
+            mClickHandlerObj.onClick(dayWeather);
         }
     }
 }

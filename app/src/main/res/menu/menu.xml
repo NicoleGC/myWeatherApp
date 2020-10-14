@@ -8,5 +8,9 @@
     app:showAsAction="ifRoom"
     android:id="@+id/refresh"
     android:title="@string/refresh" />
+    <item
+        android:id="@+id/mapOpen"
+        android:title="@string/openMap"
+        />
 
 </menu>

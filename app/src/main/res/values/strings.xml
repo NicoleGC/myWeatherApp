@@ -4,5 +4,6 @@
     <string name="app_name">myWeatherApp</string>
     <string name="refresh">Refresh</string>
     <string name="error_message">Poor Connectivity. Try again later.</string>
-    <string name = "setLocation">London</string>
+    <string name="setLocation">San Francisco</string>
+    <string name ="openMap">Open Map</string>
 </resources>
