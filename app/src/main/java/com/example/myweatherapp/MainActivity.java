@@ -1,7 +1,11 @@
 package com.example.myweatherapp;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.loader.app.LoaderManager;
+import androidx.loader.content.AsyncTaskLoader;
+import androidx.loader.content.Loader;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -27,7 +31,7 @@ import org.json.JSONException;
 import java.io.IOException;
 import java.net.URL;
 
-public class MainActivity extends AppCompatActivity implements RecyclerViewAdapter.AdapterOnClickHandler {
+public class MainActivity extends AppCompatActivity implements RecyclerViewAdapter.AdapterOnClickHandler, LoaderManager.LoaderCallbacks<String[]> {
 
 
     private static final String TAG = "tag" ;
@@ -35,6 +39,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
     private TextView mErrorMessageDisplay;
     private RecyclerView mRecyclerView;
     private RecyclerViewAdapter mAdapter;
+    private static final int LOADER_ID =22;
 
 
     @Override
@@ -55,9 +60,50 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
         mAdapter = new RecyclerViewAdapter(this);
         mRecyclerView.setAdapter(mAdapter);
 
+        //loader init
+        int loaderId = LOADER_ID;
+        Bundle bundle=null;
+        LoaderManager loaderManager = getSupportLoaderManager();
 
-        loadWeatherData();
 
+        //if a loader already exists, it will re-use it and not re create it
+        loaderManager.initLoader(loaderId,bundle,this);
+
+
+    }
+
+
+    /****MENU FUNCTIONS***/
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu,menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+        if(id == R.id.refresh){
+            mAdapter.setWeatherData(null);
+            //loadWeatherData();
+            getSupportLoaderManager().restartLoader(LOADER_ID,null,this);
+            return true;
+        }
+        else if(id==R.id.mapOpen){
+            openMapWithIntent();
+            return true;
+        }
+        else if(id==R.id.settings){
+           openSettingsWithIntent();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    public void openSettingsWithIntent(){
+        Intent intent = new Intent(this, SettingsActivity.class);
+        startActivity(intent);
     }
     public void openMapWithIntent(){
         //build uri
@@ -77,34 +123,8 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
             Log.d(TAG, "No apps to service this request");
         }
     }
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu,menu);
-        return true;
-    }
+   /*******/
 
-    @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        int id = item.getItemId();
-        if(id == R.id.refresh){
-            mAdapter.setWeatherData(null);
-            loadWeatherData();
-            return true;
-        }
-        else if(id==R.id.mapOpen){
-            openMapWithIntent();
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
-
-    private void loadWeatherData(){
-
-        showWeatherDataView();
-
-        String location = getString(R.string.setLocation);
-        new FetchWeatherTask().execute(location);
-    }
     private void showErrorMessage(){
         mRecyclerView.setVisibility(View.INVISIBLE);
         mErrorMessageDisplay.setVisibility(View.VISIBLE);
@@ -124,55 +144,73 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
     }
 
 
-    public class FetchWeatherTask extends AsyncTask<String, Void,String[]> {
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            mProgressBar.setVisibility(View.VISIBLE);
+    /***LOADER FUNCTIONS **/
+    @NonNull
+    @Override
+    public Loader<String[]> onCreateLoader(int id, final Bundle args) {
+        return new AsyncTaskLoader<String[]>(this) {
+            String [] mWeatherData=null;
 
+            @Override
+
+            protected void onStartLoading() {
+                if(mWeatherData!=null){
+                    deliverResult(mWeatherData);
+                }
+                else{
+                    mProgressBar.setVisibility(View.VISIBLE);
+                    forceLoad();
+                }
+            }
+
+            public void deliverResult(String[] data){
+                mWeatherData=data;
+                super.deliverResult(data);
+            }
+            @Nullable
+            @Override
+            public String[] loadInBackground() {
+                String city = getString(R.string.setLocation);
+
+                //build the URL by calling the appHTTPClient function buildURL
+                URL apiUrl = AppHTTPClient.buildURLfromCityName(city);
+
+                //now that we have the URL we can try to do the request, also using the function from appHTTPclient
+                try {
+                    String weatherDataJSON = AppHTTPClient.getWeatherDataJSON(apiUrl);
+
+                    //we need to call another function to digest the information and tokenize it to a sting array from the JSON
+                    String[] parsedWeatherInfo = ParseJSON.tokenizeData(MainActivity.this,weatherDataJSON);
+
+                    return parsedWeatherInfo;
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return null;
+                }
+            }
+        };
+    }
+
+    @Override
+    public void onLoadFinished(@NonNull Loader<String[]> loader, String[] data) {
+        mProgressBar.setVisibility(View.INVISIBLE);
+        if(data!=null){
+            //make sure the right view is displayed
+            showWeatherDataView();
+            mAdapter.setWeatherData(data);
         }
-        @Override
-        protected String[] doInBackground(String... params) {
-
-            //if parms is empty, return null since this means there is nothing to lookup
-            if(params.length==0){
-                return null;
-            }
-
-            String city = params[0];
-
-            //build the URL by calling the appHTTPClient function buildURL
-            URL apiUrl = AppHTTPClient.buildURLfromCityName(city);
-
-            //now that we have the URL we can try to do the request, also using the function from appHTTPclient
-            try {
-                String weatherDataJSON = AppHTTPClient.getWeatherDataJSON(apiUrl);
-                //we need to call another function to digest the information and tokenize it to a sting array from the JSON
-               String[] parsedWeatherInfo = ParseJSON.tokenizeData(MainActivity.this,weatherDataJSON);
-
-
-               return parsedWeatherInfo;
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                return null;
-            }
-
-        }
-
-
-
-        @Override
-        protected void onPostExecute(String[] weatherData) {
-            mProgressBar.setVisibility(View.INVISIBLE);
-            if(weatherData!=null){
-                //make sure the right view is displayed
-                showWeatherDataView();
-                mAdapter.setWeatherData(weatherData);
-            }
-            else{
-                showErrorMessage();
-            }
+        else{
+            showErrorMessage();
         }
     }
+
+    @Override
+    public void onLoaderReset(@NonNull Loader<String[]> loader) {
+
+
+    }
+
+
+
 }

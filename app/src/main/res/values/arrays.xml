@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="list_prefs_labels">
+        <item>@string/pref_temp_metric_label</item>
+        <item>@string/pref_temp_imp_label</item>
+    </array>
+
+    <array name="list_prefs_values">
+        <item>@string/listPrefs_default_metric_value</item>
+        <item>@string/list_prefs_default_imperial_value</item>
+    </array>
+
+
+
+</resources>

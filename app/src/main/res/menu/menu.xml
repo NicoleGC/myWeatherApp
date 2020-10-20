@@ -12,5 +12,10 @@
         android:id="@+id/mapOpen"
         android:title="@string/openMap"
         />
-
+<item
+    android:id="@+id/settings"
+    android:title="@string/settings_title"
+    app:showAsAction="never"
+    android:orderInCategory="100"
+    />
 </menu>

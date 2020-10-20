@@ -5,5 +5,25 @@
     <string name="refresh">Refresh</string>
     <string name="error_message">Poor Connectivity. Try again later.</string>
     <string name="setLocation">San Francisco</string>
-    <string name ="openMap">Open Map</string>
+    <string name="openMap">Open Map</string>
+    <string name="settings_title">Settings</string>
+
+    <!--Edit preference strings -->
+    <string name="editPrefs_title">Location</string>
+    <string name="editPrefs_key" translatable="false">location_key</string>
+    <string name="editPrefs_default" translatable="false">London, ON</string>
+
+    <!-- List preference strings -->
+    <string name="listPrefs_default_metric_value" translatable="false">metric</string>
+    <string name="list_prefs_default_imperial_value" translatable="false">imperial</string>
+    <string name="listPrefs_key" translatable="false">units_key</string>
+    <string name="listPrefs_title">Temperature Units</string>
+
+    <!--temperature preferences arrays-->
+    <string name="pref_temp_metric_label">Metric</string>
+    <string name="pref_temp_imp_label">Imperial</string>
+
+
+
+
 </resources>
