@@ -7,6 +7,7 @@ import androidx.loader.app.LoaderManager;
 import androidx.loader.content.AsyncTaskLoader;
 import androidx.loader.content.Loader;
 import androidx.preference.PreferenceManager;
+import androidx.preference.PreferenceScreen;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -31,9 +32,10 @@ import com.example.myweatherapp.AppHTTPClient;
 import org.json.JSONException;
 
 import java.io.IOException;
+
 import java.net.URL;
 
-public class MainActivity extends AppCompatActivity implements RecyclerViewAdapter.AdapterOnClickHandler, LoaderManager.LoaderCallbacks<String[]> {
+public class MainActivity extends AppCompatActivity implements RecyclerViewAdapter.AdapterOnClickHandler, LoaderManager.LoaderCallbacks<String[]>,SharedPreferences.OnSharedPreferenceChangeListener {
 
 
     private static final String TAG = "tag" ;
@@ -42,6 +44,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
     private RecyclerView mRecyclerView;
     private RecyclerViewAdapter mAdapter;
     private static final int LOADER_ID =22;
+    private static boolean SETTINGS_CHANGED=false;
 
 
     @Override
@@ -72,8 +75,25 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
         loaderManager.initLoader(loaderId,bundle,this);
 
 
+            //register listener here
+        PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(this);
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if(SETTINGS_CHANGED){
+            getSupportLoaderManager().restartLoader(LOADER_ID,null,this);
+            SETTINGS_CHANGED=false;
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        //unregister listener
+        PreferenceManager.getDefaultSharedPreferences(this).unregisterOnSharedPreferenceChangeListener(this);
+    }
 
     /****MENU FUNCTIONS***/
     @Override
@@ -109,14 +129,18 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
     }
     public void openMapWithIntent(){
         //build uri
-        Uri.Builder builder=new Uri.Builder();
+        String userlocation = PreferencesUtility.getLocationFromPreferenceOrDefault(this);
+       /* Uri.Builder builder=new Uri.Builder();
         builder.scheme("geo")
                 .path("0,0")
-                .query(getString(R.string.setLocation));
-        Uri location = builder.build();
-        //build intent
-        Intent intent=new Intent(Intent.ACTION_VIEW);
-        intent.setData(location);
+                .query(userlocation);
+        Uri location = builder.build();*/
+
+        Uri geoLocation = Uri.parse("geo:0,0?q=" + userlocation);
+
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(geoLocation);
+
         //check for apps
         if(intent.resolveActivity(getPackageManager())!=null){
             startActivity(intent);
@@ -172,10 +196,14 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
             @Nullable
             @Override
             public String[] loadInBackground() {
-                String city = getString(R.string.setLocation);
-
+                String city = PreferencesUtility.getLocationFromPreferenceOrDefault(MainActivity.this);
+                boolean ismetric= PreferencesUtility.isMetric(MainActivity.this);
+                String units="metric";
+                if(!ismetric){
+                    units="imperial";
+                }
                 //build the URL by calling the appHTTPClient function buildURL
-                URL apiUrl = AppHTTPClient.buildURLfromCityName(city);
+                URL apiUrl = AppHTTPClient.buildURLfromCityName(city,units);
 
                 //now that we have the URL we can try to do the request, also using the function from appHTTPclient
                 try {
@@ -214,5 +242,8 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
     }
 
 
-
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        SETTINGS_CHANGED=true;
+    }
 }

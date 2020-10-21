@@ -18,7 +18,7 @@ public class AppHTTPClient {
     private static String QUERY_PARAM_CITY = "q";
     private static String API_KEY = "appid";
     private static String UNITS = "units";
-    private static final String units = "metric";
+
     private static final String NUM_DAYS = "cnt";
     private static final int days=14;
 
@@ -28,9 +28,12 @@ public class AppHTTPClient {
      Description: this method will take a city name string as input, and build a url
     to perform api requests
     **/
-  public static URL buildURLfromCityName(String city){
+  public static URL buildURLfromCityName(String city, String units){
+
+      //units
+     ;
         //first build uri
-        Uri builtUri = Uri.parse(BASE_URL).buildUpon()
+      Uri builtUri = Uri.parse(BASE_URL).buildUpon()
                 .appendQueryParameter(QUERY_PARAM_CITY, city)
                 .appendQueryParameter(UNITS, units)
                 .appendQueryParameter(NUM_DAYS, Integer.toString(days))
