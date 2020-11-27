@@ -1,4 +1,4 @@
-package com.example.myweatherapp;
+package com.example.myweatherapp.utilities;
 
 import android.net.Uri;
 import android.util.Log;
@@ -59,7 +59,7 @@ public class AppHTTPClient {
         Description: takes in a build url and fetches data from the api, if url is null
         return null
      */
-    static String getWeatherDataJSON(URL url) throws IOException {
+    public static String getWeatherDataJSON(URL url) throws IOException {
         HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
         try{
             InputStream input = urlConnection.getInputStream();

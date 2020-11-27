@@ -1,7 +1,9 @@
-package com.example.myweatherapp;
+package com.example.myweatherapp.utilities;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+
+import com.example.myweatherapp.R;
 
 import androidx.preference.PreferenceManager;
 

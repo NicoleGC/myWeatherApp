@@ -1,6 +1,7 @@
 package com.example.myweatherapp;
 
 import android.content.Context;
+import android.database.Cursor;
 import android.view.LayoutInflater;
 
 import android.view.View;
@@ -8,32 +9,36 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 
+import com.example.myweatherapp.utilities.DateFormatter;
+
 import androidx.recyclerview.widget.RecyclerView;
 
 public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.RecyclerViewHolder>{
 
 
-private String[] mWeatherData;
 
+private Cursor mCursor;
+private  Context mContext;
 
 private AdapterOnClickHandler mClickHandlerObj;
 
 /*Interface to be used to handle clicks*/
 public interface AdapterOnClickHandler{
-    void onClick(String dayWeather);
+    void onClick(long dayWeather);
 }
 /**/
 
-    public RecyclerViewAdapter(AdapterOnClickHandler clickedHandled){
+    public RecyclerViewAdapter(AdapterOnClickHandler clickedHandled, Context context){
             mClickHandlerObj = clickedHandled;
+            mContext=context;
     }
 
 
+   void swapCursor(Cursor newCursor){
+       mCursor=newCursor;
+       notifyDataSetChanged();
+   }
 
-    public void setWeatherData(String [] data){
-        mWeatherData=data;
-        notifyDataSetChanged();
-    }
 
     @Override
     public RecyclerViewHolder onCreateViewHolder( ViewGroup parent, int viewType) {
@@ -48,16 +53,40 @@ public interface AdapterOnClickHandler{
 
     @Override
     public void onBindViewHolder(RecyclerViewHolder holder, int position) {
-            String dataForDayi = mWeatherData[position];
-           holder.mItemWeatherView.setText(dataForDayi);
+          mCursor.moveToPosition(position);
+
+          //weather info will be but in a weather summary string
+        String weatherInfo;
+
+        //extract the info from the cursor
+        long dateInMillis = mCursor.getLong(MainActivity.INDEX_DATE);
+        String dateReadable = DateFormatter.getFriendlyDateString(mContext,dateInMillis,false);
+
+        int weatherId = mCursor.getInt(MainActivity.INDEX_WEATHER_ID);
+        //with the weather id, you can get the description
+        String description= mCursor.getString(MainActivity.INDEX_DESCRIPTION);
+        double highTemperature = mCursor.getDouble(MainActivity.INDEX_MAX_TEMP);
+        double lowTemperature = mCursor.getDouble(MainActivity.INDEX_MIN_TEMP);
+
+        //now put all the information together in one String
+        String summary  = (dateReadable+ " - "+ description+" - "+ Math.round(highTemperature) + " / " + Math.round(lowTemperature));
+
+        //display the summary
+        holder.mItemWeatherView.setText(summary);
+
+
+
+
+
+
     }
 
     @Override
     public int getItemCount() {
-        if(mWeatherData==null){
+        if(mCursor==null){
             return 0;
         }
-        return mWeatherData.length;
+        return mCursor.getCount();
     }
 
     class RecyclerViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
@@ -72,9 +101,10 @@ public interface AdapterOnClickHandler{
 
         @Override
         public void onClick(View v) {
-            int adapterPosition = getAdapterPosition();
-            String dayWeather = mWeatherData[adapterPosition];
-            mClickHandlerObj.onClick(dayWeather);
+            int adapterPos = getAdapterPosition();
+            mCursor.moveToPosition(adapterPos);
+            long date = mCursor.getLong(MainActivity.INDEX_DATE);
+            mClickHandlerObj.onClick(date);
         }
     }
 }

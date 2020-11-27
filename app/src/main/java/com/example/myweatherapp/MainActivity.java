@@ -1,59 +1,66 @@
 package com.example.myweatherapp;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.loader.app.LoaderManager;
-import androidx.loader.content.AsyncTaskLoader;
+import androidx.loader.content.CursorLoader;
 import androidx.loader.content.Loader;
-import androidx.preference.PreferenceManager;
-import androidx.preference.PreferenceScreen;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.ProgressBar;
-import android.widget.TextView;
-import android.widget.Toast;
 
-import com.example.myweatherapp.AppHTTPClient;
+import com.example.myweatherapp.database.Contract;
+import com.example.myweatherapp.utilities.PreferencesUtility;
 
-import org.json.JSONException;
-
-import java.io.IOException;
-
-import java.net.URL;
-
-public class MainActivity extends AppCompatActivity implements RecyclerViewAdapter.AdapterOnClickHandler, LoaderManager.LoaderCallbacks<String[]>,SharedPreferences.OnSharedPreferenceChangeListener {
+public class MainActivity extends AppCompatActivity implements RecyclerViewAdapter.AdapterOnClickHandler, LoaderManager.LoaderCallbacks<Cursor> {
 
 
-    private static final String TAG = "tag" ;
+    private static final String TAG = MainActivity.class.getSimpleName();
+
+    /*column names to display*/
+    public static final String[] COLUMNS_TO_EXTRACT = {
+            Contract.DataEntry.COLUMN_DATE,
+            Contract.DataEntry.COLUMN_MAX_TEMP,
+            Contract.DataEntry.COLUMN_MIN_TEMP,
+            Contract.DataEntry.COLUMN_WEATHER_ID,
+           Contract.DataEntry.COLUMN_WEATHER_DESC
+    };
+    //indices to match positions in array above:
+    public static final int INDEX_DATE =0;
+    public static final int INDEX_MAX_TEMP = 1;
+    public static final int INDEX_MIN_TEMP =2;
+    public static final int INDEX_WEATHER_ID =3;
+   public static final int INDEX_DESCRIPTION=4;
+
     private ProgressBar mProgressBar;
-    private TextView mErrorMessageDisplay;
     private RecyclerView mRecyclerView;
     private RecyclerViewAdapter mAdapter;
     private static final int LOADER_ID =22;
-    private static boolean SETTINGS_CHANGED=false;
-
+    private int mPosition = RecyclerView.NO_POSITION;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        getSupportActionBar().setElevation(0f);
 
+
+        //populate our db
+      updateWeather();
+
+
+        //initialize views
         mProgressBar = (ProgressBar) findViewById(R.id.pb_loading);
-        mErrorMessageDisplay = ( TextView) findViewById(R.id.tv_error_message);
         mRecyclerView = (RecyclerView) findViewById(R.id.rv_weather_display);
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(this,LinearLayoutManager.VERTICAL,false);
@@ -62,38 +69,27 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
         mRecyclerView.setHasFixedSize(true);
 
         //initialize the adapter
-        mAdapter = new RecyclerViewAdapter(this);
+        mAdapter = new RecyclerViewAdapter(this,this);
         mRecyclerView.setAdapter(mAdapter);
 
+
+        showLoading();
+
+
         //loader init
-        int loaderId = LOADER_ID;
-        Bundle bundle=null;
+
         LoaderManager loaderManager = getSupportLoaderManager();
-
-
         //if a loader already exists, it will re-use it and not re create it
-        loaderManager.initLoader(loaderId,bundle,this);
+        loaderManager.initLoader(LOADER_ID,null,this);
 
 
-            //register listener here
-        PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(this);
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        if(SETTINGS_CHANGED){
-            getSupportLoaderManager().restartLoader(LOADER_ID,null,this);
-            SETTINGS_CHANGED=false;
-        }
-    }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        //unregister listener
-        PreferenceManager.getDefaultSharedPreferences(this).unregisterOnSharedPreferenceChangeListener(this);
-    }
+
+
+
+
 
     /****MENU FUNCTIONS***/
     @Override
@@ -105,13 +101,8 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
-        if(id == R.id.refresh){
-            mAdapter.setWeatherData(null);
-            //loadWeatherData();
-            getSupportLoaderManager().restartLoader(LOADER_ID,null,this);
-            return true;
-        }
-        else if(id==R.id.mapOpen){
+
+       if(id==R.id.mapOpen){
             openMapWithIntent();
             return true;
         }
@@ -119,10 +110,20 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
            openSettingsWithIntent();
             return true;
         }
+        else if(id==R.id.refresh){
+            updateWeather();
+            return true;
+       }
 
         return super.onOptionsItemSelected(item);
     }
 
+    public void updateWeather(){
+        //populate our db
+        FetchWeatherTask weatherTask = new FetchWeatherTask(this);
+        weatherTask.execute(PreferencesUtility.getLocationFromPreferenceOrDefault(this));
+
+    }
     public void openSettingsWithIntent(){
         Intent intent = new Intent(this, SettingsActivity.class);
         startActivity(intent);
@@ -130,11 +131,6 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
     public void openMapWithIntent(){
         //build uri
         String userlocation = PreferencesUtility.getLocationFromPreferenceOrDefault(this);
-       /* Uri.Builder builder=new Uri.Builder();
-        builder.scheme("geo")
-                .path("0,0")
-                .query(userlocation);
-        Uri location = builder.build();*/
 
         Uri geoLocation = Uri.parse("geo:0,0?q=" + userlocation);
 
@@ -149,22 +145,28 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
             Log.d(TAG, "No apps to service this request");
         }
     }
-   /*******/
 
-    private void showErrorMessage(){
-        mRecyclerView.setVisibility(View.INVISIBLE);
-        mErrorMessageDisplay.setVisibility(View.VISIBLE);
-    }
+
+   /************************************************************************/
+
     private void showWeatherDataView(){
-        mErrorMessageDisplay.setVisibility(View.INVISIBLE);
+        mProgressBar.setVisibility(View.INVISIBLE);
         mRecyclerView.setVisibility(View.VISIBLE);
     }
+private void showLoading(){
+        mRecyclerView.setVisibility(View.INVISIBLE);
+        mProgressBar.setVisibility(View.VISIBLE);
+
+
+}
+
 
     @Override
-    public void onClick(String dayWeather) {
+    public void onClick(long date) {
         Context context=this;
+        Uri uriData = Contract.DataEntry.buildUriWithDate(date);
         Intent intent = new Intent(context,MoreDetailsActivity.class);
-        intent.putExtra(Intent.EXTRA_TEXT,dayWeather);
+        intent.setData(uriData);
         startActivity(intent);
 
     }
@@ -173,77 +175,54 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
     /***LOADER FUNCTIONS **/
     @NonNull
     @Override
-    public Loader<String[]> onCreateLoader(int id, final Bundle args) {
-        return new AsyncTaskLoader<String[]>(this) {
-            String [] mWeatherData=null;
+    public Loader<Cursor> onCreateLoader(int id, final Bundle args) {
 
-            @Override
+        //check that we are responding to the right loader ( in our case we know there's only one)
+        switch(id){
+            case LOADER_ID:
 
-            protected void onStartLoading() {
-                if(mWeatherData!=null){
-                    deliverResult(mWeatherData);
-                }
-                else{
-                    mProgressBar.setVisibility(View.VISIBLE);
-                    forceLoad();
-                }
-            }
+                Uri uriToTable = Contract.DataEntry.OFFICIAL_URI;
 
-            public void deliverResult(String[] data){
-                mWeatherData=data;
-                super.deliverResult(data);
-            }
-            @Nullable
-            @Override
-            public String[] loadInBackground() {
-                String city = PreferencesUtility.getLocationFromPreferenceOrDefault(MainActivity.this);
-                boolean ismetric= PreferencesUtility.isMetric(MainActivity.this);
-                String units="metric";
-                if(!ismetric){
-                    units="imperial";
-                }
-                //build the URL by calling the appHTTPClient function buildURL
-                URL apiUrl = AppHTTPClient.buildURLfromCityName(city,units);
+                //the projection argument is the names of the columns we are interested in, we have grouped them in a string array in main
+                String [] projections = COLUMNS_TO_EXTRACT;
 
-                //now that we have the URL we can try to do the request, also using the function from appHTTPclient
-                try {
-                    String weatherDataJSON = AppHTTPClient.getWeatherDataJSON(apiUrl);
+                //for selection, we only care about rows whose date >= today
+                String selection = Contract.DataEntry.getSqlForTodayOn();
 
-                    //we need to call another function to digest the information and tokenize it to a sting array from the JSON
-                    String[] parsedWeatherInfo = ParseJSON.tokenizeData(MainActivity.this,weatherDataJSON);
+                //we want the information sorted in asc order of date
+                String sortedOrder = Contract.DataEntry.COLUMN_DATE+" ASC";
+                return new CursorLoader(this,uriToTable,COLUMNS_TO_EXTRACT,selection,null,sortedOrder);
 
-                    return parsedWeatherInfo;
+            default:
+                throw new RuntimeException("Loader not implemented: "+ id);
+        }
 
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    return null;
-                }
-            }
-        };
+
     }
 
     @Override
-    public void onLoadFinished(@NonNull Loader<String[]> loader, String[] data) {
-        mProgressBar.setVisibility(View.INVISIBLE);
-        if(data!=null){
-            //make sure the right view is displayed
+    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor data) {
+
+        //swaps the current cursor with our new loaded one.
+        mAdapter.swapCursor(data);
+        if(mPosition==RecyclerView.NO_POSITION){
+            mPosition=0;
+        }
+        mRecyclerView.smoothScrollToPosition(mPosition);
+        Log.v("getcount",String.valueOf(data.getCount()));
+        if(data.getCount()!=0){
             showWeatherDataView();
-            mAdapter.setWeatherData(data);
         }
-        else{
-            showErrorMessage();
-        }
+
     }
 
     @Override
-    public void onLoaderReset(@NonNull Loader<String[]> loader) {
-
+    public void onLoaderReset(@NonNull Loader<Cursor> loader) {
+        //release resources.
+        mAdapter.swapCursor(null);
 
     }
 
 
-    @Override
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        SETTINGS_CHANGED=true;
-    }
+
 }

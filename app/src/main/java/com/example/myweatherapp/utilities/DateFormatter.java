@@ -1,4 +1,4 @@
-package com.example.myweatherapp;/*
+package com.example.myweatherapp.utilities;/*
  * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -194,5 +194,12 @@ public final class DateFormatter {
             SimpleDateFormat dayFormat = new SimpleDateFormat("EEEE");
             return dayFormat.format(dateInMillis);
         }
+    }
+    public static boolean isDateNormalize(long date){
+
+        if(date % DAY_IN_MILLIS ==0){
+           return true;
+        }
+        return false;
     }
 }
