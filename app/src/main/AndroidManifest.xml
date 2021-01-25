@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.myweatherapp">
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
@@ -22,8 +23,9 @@
             android:name=".database.ContentProviderWeather"
             android:authorities="@string/content_authority"
             android:exported="false"/>
+        <service android:name=".sync.SyncIntentService"
+            android:exported="false"/>
     </application>
 
-    <uses-permission android:name="android.permission.INTERNET" />
 
 </manifest>

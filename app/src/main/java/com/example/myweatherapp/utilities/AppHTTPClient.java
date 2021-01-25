@@ -1,5 +1,6 @@
 package com.example.myweatherapp.utilities;
 
+import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
 import android.net.Uri.Builder;
@@ -68,13 +69,13 @@ public class AppHTTPClient {
             scanner.useDelimiter("\\A");
 
             boolean hasInput = scanner.hasNext();
-
+                String response = null;
             if(hasInput){
-                return scanner.next();
-            }else{
+                response=scanner.next();
 
-                return null;
             }
+            scanner.close();
+            return  response;
         }
 
         finally {
@@ -82,5 +83,17 @@ public class AppHTTPClient {
         }
 
 
+    }
+    public static URL getUrl(Context context){
+        String city =PreferencesUtility.getLocationFromPreferenceOrDefault(context);
+        boolean ismetric = PreferencesUtility.isMetric(context);
+        String units = "metric";
+
+        if (!ismetric) {
+            units = "imperial";
+        }
+        //build the URL by calling the appHTTPClient function buildURL
+        URL apiUrl =  buildURLfromCityName(city, units);
+        return apiUrl;
     }
 }

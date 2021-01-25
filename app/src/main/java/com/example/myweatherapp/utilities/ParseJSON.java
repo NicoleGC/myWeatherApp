@@ -29,7 +29,7 @@ public class ParseJSON {
     final static String ID = "id";
 
 
-    static String[] tokenizeData(Context context, String jsonData) throws JSONException {
+   /* static String[] tokenizeData(Context context, String jsonData) throws JSONException {
         JSONObject jsonObj = new JSONObject (jsonData);
 
         //EXTRACTING INFO
@@ -80,13 +80,14 @@ public class ParseJSON {
 
 
 
-    }
+    }*/
 
     public static ContentValues[] tokenizeDataIntoContentValues (Context context, String jsonData) throws JSONException {
         JSONObject jsonObj = new JSONObject (jsonData);
 
         //EXTRACTING INFO
         JSONArray weatherArray = jsonObj.getJSONArray(LIST);
+
         ContentValues[] dataPerDay = new ContentValues[weatherArray.length()]; //this array will hold weather data where each slot represents a different day
 
         //get the start day normalized

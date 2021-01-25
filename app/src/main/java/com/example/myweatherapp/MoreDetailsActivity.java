@@ -64,7 +64,9 @@ public class MoreDetailsActivity extends AppCompatActivity implements LoaderMana
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_more_details);
-        this.getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+        //this.getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
         mDate = (TextView) findViewById(R.id.tv_date);
         mDescription = (TextView) findViewById(R.id.tv_description);
         mHighTemperature = (TextView) findViewById(R.id.tv_high_temperature);
@@ -101,7 +103,6 @@ public class MoreDetailsActivity extends AppCompatActivity implements LoaderMana
         }
         if(id==android.R.id.home){
             onBackPressed();
-         
         }
         return super.onOptionsItemSelected(item);
     }

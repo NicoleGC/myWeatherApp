@@ -42,12 +42,13 @@ public interface AdapterOnClickHandler{
 
     @Override
     public RecyclerViewHolder onCreateViewHolder( ViewGroup parent, int viewType) {
-        Context context=  parent.getContext();
+       // Context context=  parent.getContext();
         int layoutIdForItem = R.layout.recyclerview_item;
-        LayoutInflater inflater = LayoutInflater.from(context);
+        LayoutInflater inflater = LayoutInflater.from(mContext);
 
 
         View view = inflater.inflate(layoutIdForItem, parent, false);
+       view.setFocusable(true);
         return new RecyclerViewHolder(view);
     }
 

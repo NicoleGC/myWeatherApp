@@ -5,11 +5,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.loader.app.LoaderManager;
 import androidx.loader.content.CursorLoader;
 import androidx.loader.content.Loader;
+import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
@@ -20,6 +22,7 @@ import android.view.View;
 import android.widget.ProgressBar;
 
 import com.example.myweatherapp.database.Contract;
+import com.example.myweatherapp.sync.SyncUtils;
 import com.example.myweatherapp.utilities.PreferencesUtility;
 
 public class MainActivity extends AppCompatActivity implements RecyclerViewAdapter.AdapterOnClickHandler, LoaderManager.LoaderCallbacks<Cursor> {
@@ -48,16 +51,13 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
     private static final int LOADER_ID =22;
     private int mPosition = RecyclerView.NO_POSITION;
 
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         getSupportActionBar().setElevation(0f);
-
-
-        //populate our db
-      updateWeather();
-
 
         //initialize views
         mProgressBar = (ProgressBar) findViewById(R.id.pb_loading);
@@ -77,18 +77,15 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
 
 
         //loader init
-
-        LoaderManager loaderManager = getSupportLoaderManager();
         //if a loader already exists, it will re-use it and not re create it
-        loaderManager.initLoader(LOADER_ID,null,this);
+        getSupportLoaderManager().initLoader(LOADER_ID,null,this);
+        //populate our db
 
+//updateWeather();
+
+      SyncUtils.initialize(this);
 
     }
-
-
-
-
-
 
 
     /****MENU FUNCTIONS***/
@@ -110,20 +107,17 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
            openSettingsWithIntent();
             return true;
         }
-        else if(id==R.id.refresh){
-            updateWeather();
-            return true;
-       }
+
 
         return super.onOptionsItemSelected(item);
     }
 
-    public void updateWeather(){
+  /* public void updateWeather(){
         //populate our db
         FetchWeatherTask weatherTask = new FetchWeatherTask(this);
         weatherTask.execute(PreferencesUtility.getLocationFromPreferenceOrDefault(this));
 
-    }
+    }*/
     public void openSettingsWithIntent(){
         Intent intent = new Intent(this, SettingsActivity.class);
         startActivity(intent);
@@ -175,7 +169,7 @@ private void showLoading(){
     /***LOADER FUNCTIONS **/
     @NonNull
     @Override
-    public Loader<Cursor> onCreateLoader(int id, final Bundle args) {
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 
         //check that we are responding to the right loader ( in our case we know there's only one)
         switch(id){
@@ -201,7 +195,7 @@ private void showLoading(){
     }
 
     @Override
-    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor data) {
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
 
         //swaps the current cursor with our new loaded one.
         mAdapter.swapCursor(data);
@@ -209,7 +203,7 @@ private void showLoading(){
             mPosition=0;
         }
         mRecyclerView.smoothScrollToPosition(mPosition);
-        Log.v("getcount",String.valueOf(data.getCount()));
+       // Log.v("getcount",String.valueOf(data.getCount()));
         if(data.getCount()!=0){
             showWeatherDataView();
         }

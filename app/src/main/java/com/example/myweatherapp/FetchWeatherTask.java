@@ -11,7 +11,7 @@ import com.example.myweatherapp.utilities.ParseJSON;
 import com.example.myweatherapp.utilities.PreferencesUtility;
 
 import java.net.URL;
-
+/*
 public class FetchWeatherTask extends AsyncTask<String, Void, Void> {
     Context mContext;
 
@@ -21,7 +21,7 @@ public class FetchWeatherTask extends AsyncTask<String, Void, Void> {
     }
 
     @Override
-    protected Void doInBackground(String... strings) {
+   protected Void doInBackground(String... strings) {
 
         //call parse JSON
         String city = strings[0];
@@ -53,4 +53,4 @@ public class FetchWeatherTask extends AsyncTask<String, Void, Void> {
         }
         return null;
     }
-}
+}*/

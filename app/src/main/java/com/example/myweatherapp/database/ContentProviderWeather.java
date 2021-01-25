@@ -27,9 +27,9 @@ public static final int CODE_WEATHER_N_DATE=101;
        return true;
     }
 
-    @Nullable
+
     @Override
-    public Cursor query(@NonNull Uri uri, @Nullable String[] projection, @Nullable String selection, @Nullable String[] selectionArgs, @Nullable String sortOrder) {
+    public Cursor query(@NonNull Uri uri, String[] projection,  String selection, String[] selectionArgs,  String sortOrder) {
                 Cursor cursor;
                 switch(mMatcher.match(uri)){
                     case CODE_WEATHER_N_DATE:
@@ -63,7 +63,7 @@ public static final int CODE_WEATHER_N_DATE=101;
         return null;
     }
     @Override
-    public int bulkInsert(Uri uri, ContentValues[] values){
+    public int bulkInsert(@NonNull Uri uri,@NonNull ContentValues[] values){
         final SQLiteDatabase db = mDbHelper.getWritableDatabase();
         int code = mMatcher.match(uri);
 
@@ -148,10 +148,10 @@ public static final int CODE_WEATHER_N_DATE=101;
     }
 
     public static UriMatcher buildUriMatcher(){
-        UriMatcher  uriMatcher= new UriMatcher(UriMatcher.NO_MATCH);
 
-        String authority = Contract.CONTENT_AUTHORITY;
-        String path = Contract.PATH_DB_NAME;
+       final UriMatcher  uriMatcher= new UriMatcher(UriMatcher.NO_MATCH);
+      final  String authority = Contract.CONTENT_AUTHORITY;
+      final  String path = Contract.PATH_DB_NAME;
 
         uriMatcher.addURI(authority,path, CODE_WEATHER);
         uriMatcher.addURI(authority,path + "/#", CODE_WEATHER_N_DATE);

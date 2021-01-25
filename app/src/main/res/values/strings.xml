@@ -11,7 +11,7 @@
     <!--Edit preference strings -->
     <string name="editPrefs_title">Location</string>
     <string name="editPrefs_key" translatable="false">location_key</string>
-    <string name="editPrefs_default" translatable="false">London, ON</string>
+    <string name="editPrefs_default" translatable="false">London, ON, CA</string>
 
     <!-- List preference strings -->
     <string name="listPrefs_default_metric_value" translatable="false">metric</string>
